@@ -1,9 +1,9 @@
 const CONFIG = {
   precioPorAdulto: 20000,      // <-- Precio por adulto
   precioPorMenor: 9000,        // <-- Precio Barra Teen (10 mocktails)
-  minimoAdultos: 20,           // <-- Regla de negocio: mínimo 20 adultos
+  minimoAdultos: 20,           // <-- Mínimo 20 adultos
   seniaPorcentaje: 0.5,
-  whatsapp: "5491176449944",   // Número de tu logo
+  whatsapp: "5491176449944",   
   email: "adrianlazarte2013@gmail.com", 
   
   // Lógica de traslado (90000 / 52 km)
@@ -60,14 +60,23 @@ function configurarCalendario() {
   });
 }
 
-// 3. Formatear precios
+// 3. Ocultar el resultado si el usuario modifica el formulario
+// (Esto soluciona el bug de que quedaba el precio anterior en pantalla)
+const todosLosCampos = form.querySelectorAll("input, select");
+todosLosCampos.forEach(campo => {
+  campo.addEventListener("change", () => {
+    resultado.hidden = true; 
+  });
+});
+
+// 4. Formatear precios
 const formatoARS = new Intl.NumberFormat("es-AR", {
   style: "currency",
   currency: "ARS",
   maximumFractionDigits: 0
 });
 
-// 4. Validar y calcular
+// 5. Validar y calcular
 form.addEventListener("submit", (e) => {
   e.preventDefault();
   errorFecha.textContent = "";
@@ -88,10 +97,10 @@ form.addEventListener("submit", (e) => {
     valido = false;
   }
 
-  const adultos = parseInt(inputAdultos.value, 10) || 0;
-  const menores = parseInt(inputMenores.value, 10) || 0;
+  // Usamos Number() || 0 para asegurarnos de que si está vacío, sea 0.
+  const adultos = Number(inputAdultos.value) || 0;
+  const menores = Number(inputMenores.value) || 0;
 
-  // Validación: mínimo 20 adultos (o podés cambiar a adultos + menores >= 20)
   if (adultos < CONFIG.minimoAdultos) {
     errorAdultos.textContent = `El mínimo es de ${CONFIG.minimoAdultos} adultos para la barra principal.`;
     valido = false;
@@ -136,7 +145,7 @@ form.addEventListener("submit", (e) => {
     filaMenores.hidden = false;
     document.getElementById("costo-menores").textContent = formatoARS.format(subtotalMenores);
   } else {
-    filaMenores.hidden = true;
+    filaMenores.hidden = true; // Se oculta si es 0
   }
 
   document.getElementById("costo-traslado").textContent = trasladoTexto;
@@ -168,22 +177,22 @@ form.addEventListener("submit", (e) => {
 
   resultado.hidden = false;
 
-  // Armar mensaje de WhatsApp/Email
+  // Armar mensaje de WhatsApp/Email limpiando las líneas vacías
   const resumen = [
     `Hola Rompe El Hielo, quiero cotizar un evento:`,
     `• Tipo de evento: ${inputTipoEvento.value}`,
     `• Fecha: ${inputFecha.value}`,
     `• Adultos: ${adultos}`,
-    `• Menores (Barra Teen): ${menores}`,
+    menores > 0 ? `• Menores (Barra Teen): ${menores}` : '', // Solo aparece si es mayor a 0
     `• Ubicación: ${zonaSeleccionada} ${kilometros !== null ? `(${kilometros} km)` : ''}`,
     `• Costo Barra Adultos: ${formatoARS.format(subtotalAdultos)}`,
-    menores > 0 ? `• Costo Barra Teen: ${formatoARS.format(subtotalMenores)}` : '',
+    menores > 0 ? `• Costo Barra Teen: ${formatoARS.format(subtotalMenores)}` : '', // Solo aparece si es mayor a 0
     `• Costo Traslado: ${trasladoTexto}`,
     `• TOTAL: ${formatoARS.format(subtotal)}`,
     `• Seña (50 %): ${formatoARS.format(senia)}`,
     "",
     "Entiendo que la barra libre incluye todos los cócteles + gaseosas y agua."
-  ].filter(Boolean).join("\n"); // .filter(Boolean) limpia las líneas vacías
+  ].filter(Boolean).join("\n"); // .filter(Boolean) borra las líneas que quedaron vacías
 
   document.getElementById("btn-whatsapp").href =
     `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(resumen)}`;
@@ -194,7 +203,7 @@ form.addEventListener("submit", (e) => {
   resultado.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
-// 5. Inicializar
+// 6. Inicializar
 (async function init() {
   await cargarFechas();
   configurarCalendario();
