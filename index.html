@@ -36,6 +36,7 @@
       <p class="tagline">Barra libre real: todos los cócteles de la carta + Coca-Cola, Sprite, soda y agua mineral. Sin límites, sin sorpresas.</p>
     </header>
 
+    <!-- COTIZADOR -->
     <section id="cotizador" aria-labelledby="titulo-cotizador">
       <h2 id="titulo-cotizador">Cotizá tu barra en un minuto</h2>
 
@@ -53,9 +54,17 @@
         </div>
 
         <div class="campo">
-          <label for="direccion">Dirección del evento (calle, número, localidad)</label>
-          <input type="text" id="direccion" name="direccion" placeholder="Ej: Av. Cabildo 1234, CABA" required>
-          <p id="error-direccion" class="error" role="alert"></p>
+          <label for="ubicacion">Ubicación del evento (desde San Miguel)</label>
+          <select id="ubicacion" name="ubicacion" required>
+            <option value="">Seleccioná tu zona...</option>
+            <option value="San Miguel">San Miguel (0 km)</option>
+            <option value="Zona Norte">Zona Norte - Tigre, Pilar, Escobar (aprox. 25 km)</option>
+            <option value="Zona Oeste">Zona Oeste - Morón, La Matanza (aprox. 25 km)</option>
+            <option value="Zona Sur">Zona Sur - Avellaneda, Lomas (aprox. 45 km)</option>
+            <option value="Capital (CABA)">Capital Federal - CABA (aprox. 52 km)</option>
+            <option value="La Plata">La Plata (aprox. 90 km)</option>
+            <option value="Otra">Otra zona (A cotizar por distancia real)</option>
+          </select>
         </div>
 
         <button type="submit" id="btn-cotizar">Calcular cotización</button>
@@ -81,6 +90,30 @@
         </div>
       </div>
     </section>
+
+    <!-- NUEVA SECCIÓN: LA CARTA -->
+    <section id="carta" aria-labelledby="titulo-carta">
+      <h2 id="titulo-carta">Nuestra Carta Completa</h2>
+      <p class="subtitulo-galeria">Todos estos tragos están incluidos en tu barra libre.</p>
+      
+      <div class="grid-carta">
+        <img src="assets/foto1.jpg" alt="Carta de tragos Rompe El Hielo 1" loading="lazy">
+        <img src="assets/foto2.jpg" alt="Carta de tragos Rompe El Hielo 2" loading="lazy">
+        <img src="assets/foto3.jpg" alt="Carta de tragos Rompe El Hielo 3" loading="lazy">
+      </div>
+    </section>
+
+    <!-- NUEVA SECCIÓN: PRUEBA SOCIAL / INSTAGRAM -->
+    <section id="experiencia" aria-labelledby="titulo-experiencia">
+      <h2 id="titulo-experiencia">Momentos Rompe El Hielo</h2>
+      <p class="subtitulo-galeria">Tragos reales servidos en nuestros eventos. ¡Los invitados los suben a sus redes!</p>
+      
+      <div class="grid-instagram">
+        <img src="assets/foto4.jpg" alt="Trago servido en un evento" loading="lazy">
+        <img src="assets/foto5.jpg" alt="Trago compartido en Instagram" loading="lazy">
+      </div>
+    </section>
+
   </main>
 
   <script src="app.js" defer></script>
