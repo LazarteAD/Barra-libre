@@ -3,25 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rompe El Hielo — Barra móvil con barra libre para eventos</title>
-  <meta name="description" content="Barra móvil con barra libre real: todos los cócteles de la carta + Coca-Cola, Sprite, soda y agua mineral incluidas. Cotizá en un minuto y reservá tu fecha.">
+  <title>Rompe El Hielo — Barra Libre para Eventos</title>
+  <meta name="description" content="Barra móvil con barra libre real: todos los cócteles de la carta + Coca-Cola, Sprite, soda y agua mineral. Cotizá en un minuto.">
   <link rel="canonical" href="https://lazartead.github.io/Barra-libre/">
-
-  <meta property="og:title" content="Rompe El Hielo — Barra móvil con barra libre">
+  
+  <meta property="og:title" content="Rompe El Hielo — Barra Libre">
   <meta property="og:description" content="Todos los cócteles de la carta + sin alcohol, incluidos. Cotizá online.">
-  <meta property="og:image" content="https://lazartead.github.io/Barra-libre/assets/og-image.jpg">
+  <meta property="og:image" content="https://lazartead.github.io/Barra-libre/assets/logo.png">
   <meta property="og:url" content="https://lazartead.github.io/Barra-libre/">
   <meta property="og:type" content="website">
 
   <link rel="stylesheet" href="styles.css">
-  <link rel="icon" href="assets/logo.webp" type="image/webp">
+  <link rel="icon" href="assets/logo.png" type="image/png">
 
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     "name": "Rompe El Hielo",
-    "description": "Barra móvil con barra libre para eventos: todos los cócteles de la carta + gaseosas y agua mineral incluidas.",
+    "description": "Barra móvil con barra libre para eventos.",
     "url": "https://lazartead.github.io/Barra-libre/",
     "areaServed": "San Miguel, Buenos Aires",
     "priceRange": "$$"
@@ -30,48 +30,64 @@
 </head>
 <body>
 
-  <header class="hero">
-    <h1>Rompe El Hielo</h1>
-    <p class="tagline">Barra libre real: todos los cócteles de la carta + Coca-Cola, Sprite, soda y agua mineral. Sin límites, sin sorpresas.</p>
-  </header>
+  <main class="container">
+    <header class="hero">
+      <h1>Rompe El Hielo</h1>
+      <p class="tagline">Barra libre real: todos los cócteles de la carta + Coca-Cola, Sprite, soda y agua mineral. Sin límites, sin sorpresas.</p>
+    </header>
 
-  <main>
     <section id="cotizador" aria-labelledby="titulo-cotizador">
       <h2 id="titulo-cotizador">Cotizá tu barra en un minuto</h2>
 
       <form id="form-cotizador" novalidate>
-        <label for="fecha">Fecha del evento</label>
-        <input type="date" id="fecha" name="fecha" required aria-describedby="error-fecha">
-        <p id="error-fecha" class="error" role="alert"></p>
+        <div class="campo">
+          <label for="fecha">Fecha del evento</label>
+          <input type="date" id="fecha" name="fecha" required aria-describedby="error-fecha">
+          <p id="error-fecha" class="error" role="alert"></p>
+        </div>
 
-        <label for="adultos">Cantidad de adultos</label>
-        <input type="number" id="adultos" name="adultos" min="20" step="1" required aria-describedby="error-adultos">
-        <p id="error-adultos" class="error" role="alert"></p>
+        <div class="campo">
+          <label for="adultos">Cantidad de adultos (mínimo 20)</label>
+          <input type="number" id="adultos" name="adultos" min="20" step="1" required aria-describedby="error-adultos">
+          <p id="error-adultos" class="error" role="alert"></p>
+        </div>
 
-        <label for="ubicacion">Ubicación del evento</label>
-        <input type="text" id="ubicacion" name="ubicacion" placeholder="Ej.: San Miguel, Buenos Aires" required>
+        <div class="campo">
+          <label for="ubicacion">Ubicación del evento</label>
+          <select id="ubicacion" name="ubicacion" required>
+            <option value="">Seleccioná tu zona...</option>
+            <option value="San Miguel">San Miguel (Sin costo de traslado)</option>
+            <option value="Capital (CABA)">Capital Federal (CABA)</option>
+            <option value="Zona Norte">Zona Norte (Tigre, Pilar, Escobar, etc.)</option>
+            <option value="Zona Sur">Zona Sur (Avellaneda, Lomas, etc.)</option>
+            <option value="Zona Oeste">Zona Oeste (Morón, La Matanza, etc.)</option>
+            <option value="La Plata">La Plata</option>
+            <option value="Otra">Otra zona (A cotizar)</option>
+          </select>
+        </div>
 
         <button type="submit" id="btn-cotizar">Calcular cotización</button>
       </form>
 
       <div id="resultado" aria-live="polite" hidden>
         <h3>Tu cotización</h3>
-        <p><strong>Total:</strong> <span id="total"></span></p>
-        <p><strong>Seña (50 %):</strong> <span id="senia"></span></p>
-        <p><strong>Saldo al día del evento:</strong> <span id="saldo"></span></p>
+        <div class="desglose">
+          <p><strong>Barra libre:</strong> <span id="costo-barra"></span></p>
+          <p><strong>Traslado:</strong> <span id="costo-traslado"></span></p>
+          <hr>
+          <p class="total"><strong>Total:</strong> <span id="total"></span></p>
+          <p><strong>Seña (50 %):</strong> <span id="senia"></span></p>
+          <p><strong>Saldo al día del evento:</strong> <span id="saldo"></span></p>
+        </div>
 
         <h4>Qué incluye</h4>
         <ul id="lista-incluye"></ul>
 
-        <a id="btn-whatsapp" class="boton" href="#" target="_blank" rel="noopener">Enviar por WhatsApp</a>
-        <a id="btn-email" class="boton secundario" href="#">Recibir por email</a>
+        <div class="botones">
+          <a id="btn-whatsapp" class="boton" href="#" target="_blank" rel="noopener">Enviar por WhatsApp</a>
+          <a id="btn-email" class="boton secundario" href="#">Recibir por Email</a>
+        </div>
       </div>
-    </section>
-
-    <section id="carta" aria-labelledby="titulo-carta">
-      <h2 id="titulo-carta">Nuestra carta</h2>
-      <p>Todos los cócteles de la carta están incluidos en tu barra libre, más Coca-Cola, Sprite, soda y agua mineral.</p>
-      <!-- Acá va tu carta actual -->
     </section>
   </main>
 
