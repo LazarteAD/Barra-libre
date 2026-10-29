@@ -58,7 +58,38 @@ input, select {
 }
 input:focus, select:focus { outline: 2px solid var(--color-primario); border-color: transparent; }
 
-button, .boton {
+/* Estilos de los botones del formulario */
+.form-botones {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+button {
+  display: inline-block;
+  padding: 1rem;
+  border: none;
+  border-radius: var(--radio);
+  background: var(--color-primario);
+  color: #000;
+  font-weight: bold;
+  font-size: 1.1rem;
+  cursor: pointer;
+  text-align: center;
+  transition: opacity 0.2s;
+  flex: 1; /* Hace que ambos botones midan lo mismo */
+}
+
+button:hover { opacity: 0.8; }
+
+button.boton-secundario {
+  background: #333;
+  color: #fff;
+  border: 1px solid #555;
+  flex: 0.5; /* El botón de limpiar es un poco más chico */
+}
+
+.boton {
   display: inline-block;
   padding: 1rem;
   border: none;
@@ -72,7 +103,7 @@ button, .boton {
   text-align: center;
   transition: opacity 0.2s;
 }
-button:hover, .boton:hover { opacity: 0.8; }
+.boton:hover { opacity: 0.8; }
 .boton.secundario { background: #333; color: #fff; border: 1px solid #555;}
 .botones { display: flex; flex-direction: column; gap: 0.8rem; margin-top: 1.5rem;}
 
