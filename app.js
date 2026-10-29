@@ -1,14 +1,23 @@
 const CONFIG = {
-  precioPorAdulto: 20000,
+  precioPorAdulto: 20000,      // <-- Ajustá tu precio por adulto
   minimoAdultos: 20,
   seniaPorcentaje: 0.5,
-  whatsapp: "5491176449944",
-  email: "hola@rompeelhielo.com",
+  whatsapp: "5491176449944",   // Número de tu logo
+  email: "adrianlazarte2013@gmail.com", 
   
-  costoPorKm: 1538,
+  // Lógica de traslado
+  // Hacemos la división exacta: $90.000 / 52 km = 1730.769...
+  costoPorKm: (90000 / 52),    
   
-  // Coordenadas de tu base en San Miguel (Longitud, Latitud)
-  origenBase: "-58.7167, -34.5333", 
+  distanciasZonas: {           // <-- Kilómetros desde San Miguel
+    "San Miguel": 0,
+    "Zona Norte": 25,          
+    "Zona Oeste": 25,          
+    "Zona Sur": 45,            
+    "Capital (CABA)": 52,      
+    "La Plata": 90,            
+    "Otra": null               
+  },
 
   incluye: [
     "Barra libre: todos los cócteles de la carta",
@@ -16,22 +25,21 @@ const CONFIG = {
     "Bartender profesional durante todo el servicio",
     "Hielo, vasos, vajilla y montaje completo",
     "5 horas de servicio (ampliable)",
-    "Traslado calculado por ruta real"
+    "Traslado calculado según distancia"
   ]
 };
 
 const form = document.getElementById("form-cotizador");
 const inputFecha = document.getElementById("fecha");
 const inputAdultos = document.getElementById("adultos");
-const inputDireccion = document.getElementById("direccion");
+const inputUbicacion = document.getElementById("ubicacion");
 const errorFecha = document.getElementById("error-fecha");
 const errorAdultos = document.getElementById("error-adultos");
-const errorDireccion = document.getElementById("error-direccion");
 const resultado = document.getElementById("resultado");
 
 let fechasOcupadas = [];
 
-// 1. Cargar fechas ocupadas (sin cambios)
+// 1. Cargar fechas ocupadas
 async function cargarFechas() {
   try {
     const res = await fetch("fechas-ocupadas.json", { cache: "no-store" });
@@ -44,7 +52,7 @@ async function cargarFechas() {
   }
 }
 
-// 2. Configurar calendario (sin cambios)
+// 2. Bloquear fechas pasadas y ocupadas
 function configurarCalendario() {
   const hoy = new Date().toISOString().split("T")[0];
   inputFecha.min = hoy;
@@ -59,82 +67,21 @@ function configurarCalendario() {
   });
 }
 
+// 3. Formatear precios
 const formatoARS = new Intl.NumberFormat("es-AR", {
   style: "currency",
   currency: "ARS",
   maximumFractionDigits: 0
 });
 
-// --- NUEVAS FUNCIONES PARA OSRM Y NOMINATIM ---
-
-/**
- * Geocodifica una dirección usando Nominatim (OpenStreetMap)
- * @param {string} direccion - Dirección a buscar
- * @returns {Promise<{lat: string, lon: string} | null>}
- */
-async function geocodificarDireccion(direccion) {
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(direccion)}&limit=1`;
-  
-  try {
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent': 'RompeElHielo/1.0 (contacto@rompeelhielo.com)' // Requerido por Nominatim
-      }
-    });
-    const data = await res.json();
-    
-    if (data && data.length > 0) {
-      return { lat: data[0].lat, lon: data[0].lon };
-    }
-    return null;
-  } catch (error) {
-    console.error("Error en geocodificación:", error);
-    return null;
-  }
-}
-
-/**
- * Calcula la distancia en km entre dos coordenadas usando OSRM
- * @param {string} origen - "lon,lat"
- * @param {string} destino - "lon,lat"
- * @returns {Promise<number | null>} - Distancia en kilómetros o null si falla
- */
-async function calcularDistanciaOSRM(origen, destino) {
-  const url = `https://router.project-osrm.org/route/v1/driving/${origen};${destino}?overview=false`;
-  
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
-    
-    if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
-      // OSRM devuelve la distancia en metros
-      const distanciaMetros = data.routes[0].distance;
-      return distanciaMetros / 1000; // Convertir a km
-    }
-    return null;
-  } catch (error) {
-    console.error("Error en cálculo de ruta OSRM:", error);
-    return null;
-  }
-}
-
-
 // 4. Validar y calcular
-form.addEventListener("submit", async (e) => {
+form.addEventListener("submit", (e) => {
   e.preventDefault();
   errorFecha.textContent = "";
   errorAdultos.textContent = "";
-  errorDireccion.textContent = "";
-  
-  // Mostrar estado de carga en el botón
-  const btnCotizar = document.getElementById("btn-cotizar");
-  const textoOriginalBtn = btnCotizar.textContent;
-  btnCotizar.textContent = "Calculando ruta...";
-  btnCotizar.disabled = true;
 
   let valido = true;
 
-  // Validaciones de fecha y adultos
   if (!inputFecha.value) {
     errorFecha.textContent = "Seleccioná una fecha disponible.";
     valido = false;
@@ -149,56 +96,32 @@ form.addEventListener("submit", async (e) => {
     valido = false;
   }
 
-  const direccionTexto = inputDireccion.value.trim();
-  if (!direccionTexto) {
-    errorDireccion.textContent = "Ingresá la dirección del evento.";
+  if (!inputUbicacion.value) {
+    alert("Por favor, seleccioná tu ubicación.");
     valido = false;
   }
 
-  if (!valido) {
-    btnCotizar.textContent = textoOriginalBtn;
-    btnCotizar.disabled = false;
-    return;
-  }
+  if (!valido) return;
 
-  // --- CÁLCULO DE DISTANCIA ---
-  let kilometros = null;
-  let trasladoTexto = "";
-
-  // 1. Geocodificar la dirección del usuario
-  const coordsDestino = await geocodificarDireccion(direccionTexto + ", Argentina");
-  
-  if (!coordsDestino) {
-    errorDireccion.textContent = "No pudimos encontrar la dirección. Probá siendo más específico (calle, número, localidad).";
-    btnCotizar.textContent = textoOriginalBtn;
-    btnCotizar.disabled = false;
-    return;
-  }
-
-  // 2. Formatear coordenadas para OSRM (lon,lat)
-  const destinoOSRM = `${coordsDestino.lon},${coordsDestino.lat}`;
-  
-  // 3. Calcular distancia real por ruta
-  kilometros = await calcularDistanciaOSRM(CONFIG.origenBase, destinoOSRM);
-
-  if (kilometros === null) {
-    // Fallback si OSRM falla
-    trasladoTexto = "A cotizar (error al calcular ruta)";
-    kilometros = 0; 
-    // Podrías dejar un mensaje de error, pero para no frenar la cotización, mostramos "A cotizar"
-  } else {
-    // Redondear km para mostrar
-    const kmMostrar = Math.round(kilometros);
-    const totalTraslado = kmMostrar * CONFIG.costoPorKm;
-    trasladoTexto = `${kmMostrar} km — ${formatoARS.format(totalTraslado)}`;
-  }
-
-  // 4. Resto de los cálculos (Barra, Seña, etc.)
+  // --- CÁLCULOS ---
   const subtotalBarra = adultos * CONFIG.precioPorAdulto;
+  const zonaSeleccionada = inputUbicacion.value;
+  const kilometros = CONFIG.distanciasZonas[zonaSeleccionada];
+  
+  let trasladoTexto = "";
   let totalTraslado = 0;
 
-  if (kilometros !== null && kilometros > 0) {
-    totalTraslado = Math.round(kilometros) * CONFIG.costoPorKm;
+  if (kilometros === null) {
+    trasladoTexto = "A cotizar (fuera de zona)";
+  } else if (kilometros === 0) {
+    trasladoTexto = "¡Bonificado! (0 km)";
+  } else {
+    // Multiplicamos los km por el costo unitario exacto (90000/52)
+    totalTraslado = kilometros * CONFIG.costoPorKm;
+    // Redondeamos el total del traslado
+    totalTraslado = Math.round(totalTraslado);
+    
+    trasladoTexto = `${kilometros} km — ${formatoARS.format(totalTraslado)}`;
   }
 
   const subtotal = subtotalBarra + totalTraslado;
@@ -221,17 +144,13 @@ form.addEventListener("submit", async (e) => {
   });
 
   resultado.hidden = false;
-  
-  // Restaurar botón
-  btnCotizar.textContent = textoOriginalBtn;
-  btnCotizar.disabled = false;
 
   // Armar mensajes
   const resumen = [
     "Hola Rompe El Hielo, quiero cotizar un evento:",
     `• Fecha: ${inputFecha.value}`,
     `• Adultos: ${adultos}`,
-    `• Dirección: ${direccionTexto}`,
+    `• Ubicación: ${zonaSeleccionada} ${kilometros !== null ? `(${kilometros} km)` : ''}`,
     `• Costo Barra: ${formatoARS.format(subtotalBarra)}`,
     `• Costo Traslado: ${trasladoTexto}`,
     `• TOTAL: ${formatoARS.format(subtotal)}`,
