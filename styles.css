@@ -96,7 +96,7 @@ li { margin-bottom: 0.4rem; font-size: 0.95rem; color: #ddd; }
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
-/* --- ESTILOS DE LA CARTA --- */
+/* --- ESTILOS DE LAS SECCIONES NUEVAS --- */
 #carta, #experiencia {
   margin-top: 3rem;
   border-top: 1px solid rgba(212, 175, 55, 0.3);
@@ -112,27 +112,42 @@ li { margin-bottom: 0.4rem; font-size: 0.95rem; color: #ddd; }
   text-align: center;
   color: #aaa;
   font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.hint-clic {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--color-primario);
   margin-bottom: 1.5rem;
 }
 
-/* Grilla para la Carta (Fotos más altas) */
-.grid-carta {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+/* Diseño de la Carta: Una foto grande abajo de la otra */
+.lista-carta {
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* Separación entre fotos */
 }
 
-.grid-carta img {
+.lista-carta a {
+  display: block;
   width: 100%;
-  height: 220px;
-  object-fit: cover;
-  border-radius: var(--radio);
-  border: 1px solid rgba(212, 175, 55, 0.4);
-  transition: transform 0.3s ease, border-color 0.3s ease;
-  cursor: zoom-in;
 }
 
-/* Grilla para Instagram (Fotos cuadradas) */
+.lista-carta img {
+  width: 100%;
+  height: auto; /* Deja que la imagen crezca lo que necesite */
+  border-radius: var(--radio);
+  border: 2px solid rgba(212, 175, 55, 0.4);
+  transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.lista-carta img:hover {
+  transform: scale(1.02); /* Pequeño efecto al pasar el mouse */
+  border-color: var(--color-primario);
+}
+
+/* Diseño de Instagram: Dos fotos cuadradas */
 .grid-instagram {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -148,14 +163,12 @@ li { margin-bottom: 0.4rem; font-size: 0.95rem; color: #ddd; }
   transition: transform 0.3s ease, border-color 0.3s ease;
 }
 
-.grid-carta img:hover, .grid-instagram img:hover {
+.grid-instagram img:hover {
   transform: scale(1.03);
   border-color: var(--color-primario);
 }
 
 @media (max-width: 480px) {
   .container { margin: 1rem 0.5rem; padding: 1.5rem; }
-  .grid-carta { grid-template-columns: 1fr; } /* En celular la carta se ve en 1 sola columna para leer bien */
-  .grid-carta img { height: auto; max-height: 400px; }
   .grid-instagram img { height: 150px; }
 }
