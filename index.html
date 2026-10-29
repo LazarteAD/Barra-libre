@@ -4,29 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rompe El Hielo — Barra Libre para Eventos</title>
-  <meta name="description" content="Barra móvil con barra libre real para adultos y Barra Teen. Cotizá en un minuto.">
-  <link rel="canonical" href="https://lazartead.github.io/Barra-libre/">
-  
-  <meta property="og:title" content="Rompe El Hielo — Barra Libre">
-  <meta property="og:description" content="Barra libre para adultos + Barra Teen con 10 mocktails. Cotizá online.">
-  <meta property="og:image" content="https://lazartead.github.io/Barra-libre/assets/logo.png">
-  <meta property="og:url" content="https://lazartead.github.io/Barra-libre/">
-  <meta property="og:type" content="website">
-
+  <meta name="description" content="Barra móvil con barra libre real para adultos y Barra Teen.">
   <link rel="stylesheet" href="styles.css">
   <link rel="icon" href="assets/logo.png" type="image/png">
-
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    "name": "Rompe El Hielo",
-    "description": "Barra móvil con barra libre para adultos y Barra Teen con 10 mocktails.",
-    "url": "https://lazartead.github.io/Barra-libre/",
-    "areaServed": "San Miguel, Buenos Aires",
-    "priceRange": "$$"
-  }
-  </script>
+  
+  <!-- CONEXIÓN A SUPABASE -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -36,14 +19,13 @@
       <p class="tagline">Barra libre real para adultos + <strong>Barra Teen (10 mocktails)</strong>. Sin límites, sin sorpresas.</p>
     </header>
 
-    <section id="cotizador" aria-labelledby="titulo-cotizador">
-      <h2 id="titulo-cotizador">Cotizá tu barra en un minuto</h2>
-
+    <section id="cotizador">
+      <h2>Cotizá tu barra en un minuto</h2>
       <form id="form-cotizador" novalidate>
         <div class="campo">
           <label for="tipo-evento">Tipo de evento</label>
-          <select id="tipo-evento" name="tipo-evento" required>
-            <option value="">Seleccioná el tipo de evento...</option>
+          <select id="tipo-evento" required>
+            <option value="">Seleccioná...</option>
             <option value="Cumpleaños de 15">Cumpleaños de 15</option>
             <option value="Boda">Boda</option>
             <option value="Cumpleaños adulto">Cumpleaños adulto</option>
@@ -52,55 +34,47 @@
             <option value="Otro">Otro</option>
           </select>
         </div>
-
         <div class="campo">
           <label for="fecha">Fecha del evento</label>
-          <input type="date" id="fecha" name="fecha" required aria-describedby="error-fecha">
+          <input type="date" id="fecha" required>
           <p id="error-fecha" class="error" role="alert"></p>
         </div>
-
         <div class="campo">
           <label for="turno">Turno del evento</label>
-          <select id="turno" name="turno" required>
-            <option value="">Seleccioná el turno...</option>
+          <select id="turno" required>
+            <option value="">Seleccioná...</option>
             <option value="Día">Día</option>
             <option value="Noche">Noche</option>
           </select>
         </div>
-
         <div class="campo">
           <label for="adultos">Cantidad de adultos</label>
-          <input type="number" id="adultos" name="adultos" min="0" step="1" required aria-describedby="error-adultos">
+          <input type="number" id="adultos" min="0" step="1" required>
           <p id="error-adultos" class="error" role="alert"></p>
         </div>
-
         <div class="campo">
-          <label for="menores">Cantidad de menores (Barra Teen - 10 mocktails)</label>
-          <input type="number" id="menores" name="menores" min="0" step="1" value="0">
+          <label for="menores">Cantidad de menores (Barra Teen)</label>
+          <input type="number" id="menores" min="0" step="1" value="0">
         </div>
-
         <div class="campo">
-          <label for="ubicacion">Ubicación del evento (desde San Miguel)</label>
-          <select id="ubicacion" name="ubicacion" required>
-            <option value="">Seleccioná tu zona...</option>
+          <label for="ubicacion">Ubicación del evento</label>
+          <select id="ubicacion" required>
+            <option value="">Seleccioná...</option>
             <option value="San Miguel">San Miguel (0 km)</option>
-            <option value="Zona Norte">Zona Norte - Tigre, Pilar, Escobar (aprox. 25 km)</option>
-            <option value="Zona Oeste">Zona Oeste - Morón, La Matanza (aprox. 25 km)</option>
-            <option value="Zona Sur">Zona Sur - Avellaneda, Lomas (aprox. 45 km)</option>
-            <option value="Capital (CABA)">Capital Federal - CABA (aprox. 52 km)</option>
+            <option value="Zona Norte">Zona Norte (aprox. 25 km)</option>
+            <option value="Zona Oeste">Zona Oeste (aprox. 25 km)</option>
+            <option value="Zona Sur">Zona Sur (aprox. 45 km)</option>
+            <option value="Capital (CABA)">Capital Federal (aprox. 52 km)</option>
             <option value="La Plata">La Plata (aprox. 90 km)</option>
-            <option value="Otra">Otra zona (A cotizar por distancia real)</option>
           </select>
         </div>
-
-        <!-- NUEVOS BOTONES -->
         <div class="form-botones">
           <button type="submit" id="btn-cotizar">Calcular cotización</button>
           <button type="button" id="btn-limpiar" class="boton-secundario">Limpiar</button>
         </div>
       </form>
 
-      <div id="resultado" aria-live="polite" hidden>
+      <div id="resultado" hidden>
         <h3>Tu cotización</h3>
         <div class="desglose">
           <p><strong>Barra Adultos:</strong> <span id="costo-adultos"></span></p>
@@ -109,43 +83,48 @@
           <hr>
           <p class="total"><strong>Total:</strong> <span id="total"></span></p>
           <p><strong>Seña (50 %):</strong> <span id="senia"></span></p>
-          <p><strong>Saldo al día del evento:</strong> <span id="saldo"></span></p>
+          <p><strong>Saldo:</strong> <span id="saldo"></span></p>
         </div>
-
-        <h4>Qué incluye</h4>
-        <ul id="lista-incluye"></ul>
-
+        
         <div class="botones">
-          <a id="btn-whatsapp" class="boton" href="#" target="_blank" rel="noopener">Enviar por WhatsApp</a>
-          <a id="btn-email" class="boton secundario" href="#">Recibir por Email</a>
+          <!-- Este botón ahora abre el modal -->
+          <button id="btn-reservar" class="boton">Reservar mi fecha</button>
         </div>
       </div>
     </section>
 
-    <section id="carta" aria-labelledby="titulo-carta">
-      <h2 id="titulo-carta">Nuestra Carta Completa</h2>
-      <p class="subtitulo-galeria">Todos estos tragos están incluidos en tu barra libre.</p>
-      <p class="hint-clic">👆 Tocá las imágenes para verlas en tamaño completo</p>
-      
-      <div class="lista-carta">
-        <a href="assets/foto1.jpg" target="_blank"><img src="assets/foto1.jpg" alt="Carta 1" loading="lazy"></a>
-        <a href="assets/foto2.jpg" target="_blank"><img src="assets/foto2.jpg" alt="Carta 2" loading="lazy"></a>
-        <a href="assets/foto3.jpg" target="_blank"><img src="assets/foto3.jpg" alt="Carta 3" loading="lazy"></a>
+    <!-- MODAL DE CAPTURA DE DATOS -->
+    <div id="modal-lead" class="modal" hidden>
+      <div class="modal-contenido">
+        <h3>¡Casi listo!</h3>
+        <p>Dejanos tus datos para guardar esta cotización y enviarte el link de pago de la seña.</p>
+        <form id="form-lead">
+          <div class="campo">
+            <label>Nombre y Apellido</label>
+            <input type="text" id="lead-nombre" required placeholder="Ej: Juan Pérez">
+          </div>
+          <div class="campo">
+            <label>WhatsApp / Teléfono</label>
+            <input type="tel" id="lead-telefono" required placeholder="Ej: 11 2345 6789">
+          </div>
+          <div class="form-botones">
+            <button type="submit">Confirmar y Enviar</button>
+            <button type="button" id="btn-cerrar-modal" class="boton-secundario">Cancelar</button>
+          </div>
+        </form>
       </div>
-    </section>
+    </div>
 
-    <section id="experiencia" aria-labelledby="titulo-experiencia">
-      <h2 id="titulo-experiencia">Momentos Rompe El Hielo</h2>
-      <p class="subtitulo-galeria">Tragos reales servidos en nuestros eventos.</p>
-      
-      <div class="grid-instagram">
-        <img src="assets/foto4.jpg" alt="Trago evento" loading="lazy">
-        <img src="assets/foto5.jpg" alt="Trago Instagram" loading="lazy">
+    <section id="carta">
+      <h2>Nuestra Carta Completa</h2>
+      <div class="lista-carta">
+        <a href="assets/foto1.jpg" target="_blank"><img src="assets/foto1.jpg" loading="lazy"></a>
+        <a href="assets/foto2.jpg" target="_blank"><img src="assets/foto2.jpg" loading="lazy"></a>
+        <a href="assets/foto3.jpg" target="_blank"><img src="assets/foto3.jpg" loading="lazy"></a>
       </div>
     </section>
 
   </main>
-
   <script src="app.js" defer></script>
 </body>
 </html>
