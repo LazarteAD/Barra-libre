@@ -4,7 +4,7 @@ const CONFIG = {
   minimoAdultos: 20,           
   seniaPorcentaje: 0.5,
   whatsapp: "5491176449944",   
-  email: "adrianlazarte2013@gmail.com", 
+  email: "hola@rompeelhielo.com", 
   costoPorKm: (90000 / 52),    
   
   distanciasZonas: {
@@ -31,13 +31,12 @@ const resultado = document.getElementById("resultado");
 
 let fechasOcupadas = [];
 
-// 1. Cargar fechas y turnos ocupados
+// 1. Cargar fechas ocupadas
 async function cargarFechas() {
   try {
     const res = await fetch("fechas-ocupadas.json", { cache: "no-store" });
     if (!res.ok) throw new Error("No se pudo cargar el calendario");
     const data = await res.json();
-    // Ahora el JSON guarda objetos con {fecha, turno}
     fechasOcupadas = data; 
   } catch (err) {
     console.error("Error al cargar fechas:", err);
@@ -45,7 +44,7 @@ async function cargarFechas() {
   }
 }
 
-// 2. Validar disponibilidad al cambiar fecha o turno
+// 2. Validar disponibilidad (Blindado)
 function validarDisponibilidad() {
   const fechaVal = inputFecha.value;
   const turnoVal = inputTurno.value;
@@ -55,21 +54,26 @@ function validarDisponibilidad() {
     return;
   }
 
-  // Buscamos si hay un bloqueo para ese día exacto
-  // Regla: Se bloquea si coincide la fecha Y el turno, O si el turno es "Todo el día"
+  // Buscamos si hay un bloqueo
   const estaOcupado = fechasOcupadas.some(item => {
-    return item.fecha === fechaVal && 
-           (item.turno === turnoVal || item.turno === "Todo el día");
+    if (item.fecha !== fechaVal) return false;
+    
+    // Si el JSON no tiene "turno", o dice "Todo el día", o coincide con el turno elegido -> Bloqueado
+    if (!item.turno || item.turno === "Todo el día" || item.turno === turnoVal) {
+      return true;
+    }
+    return false;
   });
 
   if (estaOcupado) {
-    errorFecha.textContent = `Ese turno (${turnoVal}) ya está reservado. Elegí otro turno u otra fecha.`;
+    errorFecha.textContent = `Esa fecha y turno ya están reservados. Elegí otra opción.`;
     inputTurno.value = ""; // Reiniciamos el turno para que elija otro
   } else {
     errorFecha.textContent = "";
   }
 }
 
+// Eventos para validar en tiempo real
 inputFecha.addEventListener("change", () => {
   const hoy = new Date().toISOString().split("T")[0];
   inputFecha.min = hoy;
@@ -112,7 +116,7 @@ form.addEventListener("submit", (e) => {
     valido = false;
   }
 
-  // Volvemos a chequear por las dudas que haya cambiado algo
+  // Volvemos a chequear por las dudas
   validarDisponibilidad();
   if (errorFecha.textContent !== "") valido = false;
 
