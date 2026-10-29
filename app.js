@@ -1,16 +1,28 @@
 const CONFIG = {
-  precioPorAdulto: 20000,      // ← tu tarifa
-  minimoAdultos: 20,           // ← tu mínimo
+  precioPorAdulto: 20000,      // <-- Ajustá tu precio por adulto
+  minimoAdultos: 20,
   seniaPorcentaje: 0.5,
-  whatsapp: "5491176449944",   // ← tu número con código de país, sin + ni espacios
-  email: "adrianlazarte2013@gmail.com", // ← tu email
+  whatsapp: "5491176449944",   // El número de tu logo (549 + 11...)
+  email: "adrianlazarte2013@gmail.com", 
+  
+  // Lógica de traslado basada en distancias desde San Miguel
+  costosTraslado: {
+    "San Miguel": 0,
+    "Capital (CABA)": 80000,
+    "Zona Norte": 25000,
+    "Zona Sur": 35000,
+    "Zona Oeste": 20000,
+    "La Plata": 45000,
+    "Otra": null // null significa que se muestra "A cotizar"
+  },
+
   incluye: [
     "Barra libre: todos los cócteles de la carta",
     "Sin alcohol: Coca-Cola, Sprite, soda y agua mineral",
     "Bartender profesional durante todo el servicio",
     "Hielo, vasos, vajilla y montaje completo",
     "5 horas de servicio (ampliable)",
-    "Traslado dentro de la zona"
+    "Traslado según zona seleccionada"
   ]
 };
 
@@ -24,28 +36,27 @@ const resultado = document.getElementById("resultado");
 
 let fechasOcupadas = [];
 
-// 1. Cargar fechas ocupadas desde el JSON
+// 1. Cargar fechas ocupadas
 async function cargarFechas() {
   try {
     const res = await fetch("fechas-ocupadas.json", { cache: "no-store" });
     if (!res.ok) throw new Error("No se pudo cargar el calendario");
     const data = await res.json();
-    // Acepta tanto ["2026-01-01"] como [{"fecha":"2026-01-01","motivo":"..."}]
     fechasOcupadas = data.map(item => typeof item === "string" ? item : item.fecha);
   } catch (err) {
-    console.error(err);
+    console.error("Error al cargar fechas:", err);
     fechasOcupadas = [];
   }
 }
 
-// 2. Bloquear fechas pasadas y ocupadas en el selector
+// 2. Bloquear fechas pasadas y ocupadas
 function configurarCalendario() {
   const hoy = new Date().toISOString().split("T")[0];
   inputFecha.min = hoy;
 
   inputFecha.addEventListener("change", () => {
     if (fechasOcupadas.includes(inputFecha.value)) {
-      errorFecha.textContent = "Esa fecha ya está ocupada. Elegí otra.";
+      errorFecha.textContent = "Esa fecha ya está ocupada. Elegí otra por favor.";
       inputFecha.value = "";
     } else {
       errorFecha.textContent = "";
@@ -53,7 +64,7 @@ function configurarCalendario() {
   });
 }
 
-// 3. Formatear precios en ARS
+// 3. Formatear precios
 const formatoARS = new Intl.NumberFormat("es-AR", {
   style: "currency",
   currency: "ARS",
@@ -69,7 +80,7 @@ form.addEventListener("submit", (e) => {
   let valido = true;
 
   if (!inputFecha.value) {
-    errorFecha.textContent = "Seleccioná una fecha disponible para continuar.";
+    errorFecha.textContent = "Seleccioná una fecha disponible.";
     valido = false;
   } else if (fechasOcupadas.includes(inputFecha.value)) {
     errorFecha.textContent = "Esa fecha ya está ocupada.";
@@ -82,17 +93,37 @@ form.addEventListener("submit", (e) => {
     valido = false;
   }
 
-  if (!inputUbicacion.value.trim()) {
+  if (!inputUbicacion.value) {
+    alert("Por favor, seleccioná tu ubicación.");
     valido = false;
   }
 
   if (!valido) return;
 
-  const subtotal = adultos * CONFIG.precioPorAdulto;
+  // Cálculos
+  const subtotalBarra = adultos * CONFIG.precioPorAdulto;
+  const zonaSeleccionada = inputUbicacion.value;
+  const costoTraslado = CONFIG.costosTraslado[zonaSeleccionada];
+  
+  let trasladoTexto = "";
+  let totalTraslado = 0;
+
+  if (costoTraslado === null) {
+    trasladoTexto = "A cotizar";
+  } else if (costoTraslado === 0) {
+    trasladoTexto = "¡Bonificado! (San Miguel)";
+  } else {
+    totalTraslado = costoTraslado;
+    trasladoTexto = formatoARS.format(costoTraslado);
+  }
+
+  const subtotal = subtotalBarra + totalTraslado;
   const senia = subtotal * CONFIG.seniaPorcentaje;
   const saldo = subtotal - senia;
 
   // Pintar resultado
+  document.getElementById("costo-barra").textContent = formatoARS.format(subtotalBarra);
+  document.getElementById("costo-traslado").textContent = trasladoTexto;
   document.getElementById("total").textContent = formatoARS.format(subtotal);
   document.getElementById("senia").textContent = formatoARS.format(senia);
   document.getElementById("saldo").textContent = formatoARS.format(saldo);
@@ -109,14 +140,16 @@ form.addEventListener("submit", (e) => {
 
   // Armar mensajes
   const resumen = [
-    "Hola Rompe El Hielo, quiero reservar:",
+    "Hola Rompe El Hielo, quiero cotizar un evento:",
     `• Fecha: ${inputFecha.value}`,
     `• Adultos: ${adultos}`,
-    `• Ubicación: ${inputUbicacion.value}`,
-    `• Total: ${formatoARS.format(subtotal)}`,
+    `• Ubicación: ${zonaSeleccionada}`,
+    `• Costo Barra: ${formatoARS.format(subtotalBarra)}`,
+    `• Costo Traslado: ${trasladoTexto}`,
+    `• TOTAL: ${formatoARS.format(subtotal)}`,
     `• Seña (50 %): ${formatoARS.format(senia)}`,
     "",
-    "Incluye: barra libre con todos los cócteles de la carta + Coca-Cola, Sprite, soda y agua mineral."
+    "Entiendo que la barra libre incluye todos los cócteles + gaseosas y agua."
   ].join("\n");
 
   document.getElementById("btn-whatsapp").href =
