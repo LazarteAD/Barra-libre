@@ -53,17 +53,9 @@
         </div>
 
         <div class="campo">
-          <label for="ubicacion">Ubicación del evento</label>
-          <select id="ubicacion" name="ubicacion" required>
-            <option value="">Seleccioná tu zona...</option>
-            <option value="San Miguel">San Miguel (Sin costo de traslado)</option>
-            <option value="Capital (CABA)">Capital Federal (CABA)</option>
-            <option value="Zona Norte">Zona Norte (Tigre, Pilar, Escobar, etc.)</option>
-            <option value="Zona Sur">Zona Sur (Avellaneda, Lomas, etc.)</option>
-            <option value="Zona Oeste">Zona Oeste (Morón, La Matanza, etc.)</option>
-            <option value="La Plata">La Plata</option>
-            <option value="Otra">Otra zona (A cotizar)</option>
-          </select>
+          <label for="direccion">Dirección del evento (calle, número, localidad)</label>
+          <input type="text" id="direccion" name="direccion" placeholder="Ej: Av. Cabildo 1234, CABA" required>
+          <p id="error-direccion" class="error" role="alert"></p>
         </div>
 
         <button type="submit" id="btn-cotizar">Calcular cotización</button>
