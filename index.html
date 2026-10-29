@@ -59,13 +59,12 @@
           <p id="error-fecha" class="error" role="alert"></p>
         </div>
 
-        <!-- NUEVO CAMPO: TURNO -->
         <div class="campo">
           <label for="turno">Turno del evento</label>
           <select id="turno" name="turno" required>
             <option value="">Seleccioná el turno...</option>
-            <option value="Mediodía/Tarde">Mediodía / Tarde (aprox. 11 a 17 hs)</option>
-            <option value="Noche">Noche (aprox. 19 a 02 hs)</option>
+            <option value="Día">Día</option>
+            <option value="Noche">Noche</option>
           </select>
         </div>
 
@@ -94,7 +93,11 @@
           </select>
         </div>
 
-        <button type="submit" id="btn-cotizar">Calcular cotización</button>
+        <!-- NUEVOS BOTONES -->
+        <div class="form-botones">
+          <button type="submit" id="btn-cotizar">Calcular cotización</button>
+          <button type="button" id="btn-limpiar" class="boton-secundario">Limpiar</button>
+        </div>
       </form>
 
       <div id="resultado" aria-live="polite" hidden>
