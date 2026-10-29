@@ -4,7 +4,7 @@ const CONFIG = {
   minimoAdultos: 20,           
   seniaPorcentaje: 0.5,
   whatsapp: "5491176449944",   
-  email: "hola@rompeelhielo.com", 
+  email: "adrianlazarte2013@gmail.com, 
   costoPorKm: (90000 / 52),    
   
   distanciasZonas: {
@@ -28,10 +28,11 @@ const inputUbicacion = document.getElementById("ubicacion");
 const errorFecha = document.getElementById("error-fecha");
 const errorAdultos = document.getElementById("error-adultos");
 const resultado = document.getElementById("resultado");
+const btnLimpiar = document.getElementById("btn-limpiar");
 
 let fechasOcupadas = [];
 
-// 1. Cargar fechas ocupadas
+// 1. Cargar fechas y turnos ocupados
 async function cargarFechas() {
   try {
     const res = await fetch("fechas-ocupadas.json", { cache: "no-store" });
@@ -44,7 +45,7 @@ async function cargarFechas() {
   }
 }
 
-// 2. Validar disponibilidad (Blindado)
+// 2. Validar disponibilidad
 function validarDisponibilidad() {
   const fechaVal = inputFecha.value;
   const turnoVal = inputTurno.value;
@@ -54,11 +55,10 @@ function validarDisponibilidad() {
     return;
   }
 
-  // Buscamos si hay un bloqueo
   const estaOcupado = fechasOcupadas.some(item => {
     if (item.fecha !== fechaVal) return false;
     
-    // Si el JSON no tiene "turno", o dice "Todo el día", o coincide con el turno elegido -> Bloqueado
+    // Si dice "Todo el día", o no tiene turno, o coincide con el elegido
     if (!item.turno || item.turno === "Todo el día" || item.turno === turnoVal) {
       return true;
     }
@@ -67,13 +67,12 @@ function validarDisponibilidad() {
 
   if (estaOcupado) {
     errorFecha.textContent = `Esa fecha y turno ya están reservados. Elegí otra opción.`;
-    inputTurno.value = ""; // Reiniciamos el turno para que elija otro
+    inputTurno.value = ""; 
   } else {
     errorFecha.textContent = "";
   }
 }
 
-// Eventos para validar en tiempo real
 inputFecha.addEventListener("change", () => {
   const hoy = new Date().toISOString().split("T")[0];
   inputFecha.min = hoy;
@@ -116,7 +115,6 @@ form.addEventListener("submit", (e) => {
     valido = false;
   }
 
-  // Volvemos a chequear por las dudas
   validarDisponibilidad();
   if (errorFecha.textContent !== "") valido = false;
 
@@ -221,7 +219,19 @@ form.addEventListener("submit", (e) => {
   resultado.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
-// 6. Inicializar
+// 6. Lógica del botón Limpiar Formulario
+btnLimpiar.addEventListener("click", () => {
+  form.reset(); // Borra todos los inputs y selects
+  resultado.hidden = true; // Oculta la cotización anterior
+  errorFecha.textContent = "";
+  errorAdultos.textContent = "";
+  inputMenores.value = 0; // Asegura que menores vuelva a 0
+  
+  // Sube la pantalla suavemente hasta el inicio del formulario
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+// 7. Inicializar
 (async function init() {
   await cargarFechas();
 })();
