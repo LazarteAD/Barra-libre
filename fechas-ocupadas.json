@@ -1,5 +1,5 @@
 [
-  { "fecha": "2026-11-06", "motivo": "Evento privado" },
-  { "fecha": "2026-11-08", "motivo": "Boda" },
-  { "fecha": "2027-02-20", "motivo": "Boda" }
+  { "fecha": "2026-11-06", "turno": "Todo el día", "motivo": "Evento privado" },
+  { "fecha": "2026-11-08", "turno": "Todo el día", "motivo": "Boda" },
+  { "fecha": "2027-02-20", "turno": "Todo el día", "motivo": "Boda" }
 ]
