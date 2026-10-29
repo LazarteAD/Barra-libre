@@ -1,12 +1,10 @@
 const CONFIG = {
-  precioPorAdulto: 20000,      // <-- Precio por adulto
-  precioPorMenor: 9000,        // <-- Precio Barra Teen (10 mocktails)
-  minimoAdultos: 20,           // <-- Mínimo 20 adultos
+  precioPorAdulto: 20000,      
+  precioPorMenor: 9000,        
+  minimoAdultos: 20,           
   seniaPorcentaje: 0.5,
   whatsapp: "5491176449944",   
   email: "adrianlazarte2013@gmail.com", 
-  
-  // Lógica de traslado (90000 / 52 km)
   costoPorKm: (90000 / 52),    
   
   distanciasZonas: {
@@ -23,6 +21,7 @@ const CONFIG = {
 const form = document.getElementById("form-cotizador");
 const inputTipoEvento = document.getElementById("tipo-evento");
 const inputFecha = document.getElementById("fecha");
+const inputTurno = document.getElementById("turno");
 const inputAdultos = document.getElementById("adultos");
 const inputMenores = document.getElementById("menores");
 const inputUbicacion = document.getElementById("ubicacion");
@@ -32,41 +31,56 @@ const resultado = document.getElementById("resultado");
 
 let fechasOcupadas = [];
 
-// 1. Cargar fechas ocupadas
+// 1. Cargar fechas y turnos ocupados
 async function cargarFechas() {
   try {
     const res = await fetch("fechas-ocupadas.json", { cache: "no-store" });
     if (!res.ok) throw new Error("No se pudo cargar el calendario");
     const data = await res.json();
-    fechasOcupadas = data.map(item => typeof item === "string" ? item : item.fecha);
+    // Ahora el JSON guarda objetos con {fecha, turno}
+    fechasOcupadas = data; 
   } catch (err) {
     console.error("Error al cargar fechas:", err);
     fechasOcupadas = [];
   }
 }
 
-// 2. Bloquear fechas pasadas y ocupadas
-function configurarCalendario() {
-  const hoy = new Date().toISOString().split("T")[0];
-  inputFecha.min = hoy;
+// 2. Validar disponibilidad al cambiar fecha o turno
+function validarDisponibilidad() {
+  const fechaVal = inputFecha.value;
+  const turnoVal = inputTurno.value;
 
-  inputFecha.addEventListener("change", () => {
-    if (fechasOcupadas.includes(inputFecha.value)) {
-      errorFecha.textContent = "Esa fecha ya está ocupada. Elegí otra por favor.";
-      inputFecha.value = "";
-    } else {
-      errorFecha.textContent = "";
-    }
+  if (!fechaVal || !turnoVal) {
+    errorFecha.textContent = "";
+    return;
+  }
+
+  // Buscamos si hay un bloqueo para ese día exacto
+  // Regla: Se bloquea si coincide la fecha Y el turno, O si el turno es "Todo el día"
+  const estaOcupado = fechasOcupadas.some(item => {
+    return item.fecha === fechaVal && 
+           (item.turno === turnoVal || item.turno === "Todo el día");
   });
+
+  if (estaOcupado) {
+    errorFecha.textContent = `Ese turno (${turnoVal}) ya está reservado. Elegí otro turno u otra fecha.`;
+    inputTurno.value = ""; // Reiniciamos el turno para que elija otro
+  } else {
+    errorFecha.textContent = "";
+  }
 }
 
+inputFecha.addEventListener("change", () => {
+  const hoy = new Date().toISOString().split("T")[0];
+  inputFecha.min = hoy;
+  validarDisponibilidad();
+});
+
+inputTurno.addEventListener("change", validarDisponibilidad);
+
 // 3. Ocultar el resultado si el usuario modifica el formulario
-// (Esto soluciona el bug de que quedaba el precio anterior en pantalla)
-const todosLosCampos = form.querySelectorAll("input, select");
-todosLosCampos.forEach(campo => {
-  campo.addEventListener("change", () => {
-    resultado.hidden = true; 
-  });
+form.querySelectorAll("input, select").forEach(campo => {
+  campo.addEventListener("change", () => { resultado.hidden = true; });
 });
 
 // 4. Formatear precios
@@ -76,12 +90,11 @@ const formatoARS = new Intl.NumberFormat("es-AR", {
   maximumFractionDigits: 0
 });
 
-// 5. Validar y calcular
+// 5. Calcular
 form.addEventListener("submit", (e) => {
   e.preventDefault();
   errorFecha.textContent = "";
   errorAdultos.textContent = "";
-
   let valido = true;
 
   if (!inputTipoEvento.value) {
@@ -90,19 +103,24 @@ form.addEventListener("submit", (e) => {
   }
 
   if (!inputFecha.value) {
-    errorFecha.textContent = "Seleccioná una fecha disponible.";
+    errorFecha.textContent = "Seleccioná una fecha.";
     valido = false;
-  } else if (fechasOcupadas.includes(inputFecha.value)) {
-    errorFecha.textContent = "Esa fecha ya está ocupada.";
+  }
+  
+  if (!inputTurno.value) {
+    errorFecha.textContent = "Seleccioná un turno.";
     valido = false;
   }
 
-  // Usamos Number() || 0 para asegurarnos de que si está vacío, sea 0.
+  // Volvemos a chequear por las dudas que haya cambiado algo
+  validarDisponibilidad();
+  if (errorFecha.textContent !== "") valido = false;
+
   const adultos = Number(inputAdultos.value) || 0;
   const menores = Number(inputMenores.value) || 0;
 
   if (adultos < CONFIG.minimoAdultos) {
-    errorAdultos.textContent = `El mínimo es de ${CONFIG.minimoAdultos} adultos para la barra principal.`;
+    errorAdultos.textContent = `El mínimo es de ${CONFIG.minimoAdultos} adultos.`;
     valido = false;
   }
 
@@ -116,7 +134,6 @@ form.addEventListener("submit", (e) => {
   // --- CÁLCULOS ---
   const subtotalAdultos = adultos * CONFIG.precioPorAdulto;
   const subtotalMenores = menores * CONFIG.precioPorMenor;
-  
   const zonaSeleccionada = inputUbicacion.value;
   const kilometros = CONFIG.distanciasZonas[zonaSeleccionada];
   
@@ -128,8 +145,7 @@ form.addEventListener("submit", (e) => {
   } else if (kilometros === 0) {
     trasladoTexto = "¡Bonificado! (0 km)";
   } else {
-    totalTraslado = kilometros * CONFIG.costoPorKm;
-    totalTraslado = Math.round(totalTraslado);
+    totalTraslado = Math.round(kilometros * CONFIG.costoPorKm);
     trasladoTexto = `${kilometros} km — ${formatoARS.format(totalTraslado)}`;
   }
 
@@ -137,7 +153,6 @@ form.addEventListener("submit", (e) => {
   const senia = subtotal * CONFIG.seniaPorcentaje;
   const saldo = subtotal - senia;
 
-  // Pintar resultado
   document.getElementById("costo-adultos").textContent = formatoARS.format(subtotalAdultos);
   
   const filaMenores = document.getElementById("fila-menores");
@@ -145,7 +160,7 @@ form.addEventListener("submit", (e) => {
     filaMenores.hidden = false;
     document.getElementById("costo-menores").textContent = formatoARS.format(subtotalMenores);
   } else {
-    filaMenores.hidden = true; // Se oculta si es 0
+    filaMenores.hidden = true; 
   }
 
   document.getElementById("costo-traslado").textContent = trasladoTexto;
@@ -153,7 +168,6 @@ form.addEventListener("submit", (e) => {
   document.getElementById("senia").textContent = formatoARS.format(senia);
   document.getElementById("saldo").textContent = formatoARS.format(saldo);
 
-  // Armar lista de "Qué incluye"
   const lista = document.getElementById("lista-incluye");
   lista.innerHTML = "";
   
@@ -162,7 +176,7 @@ form.addEventListener("submit", (e) => {
     "Sin alcohol: Coca-Cola, Sprite, soda y agua mineral",
     "Bartender profesional durante todo el servicio",
     "Hielo, vasos, vajilla y montaje completo",
-    "5 horas de servicio (ampliable)"
+    "5 horas de servicio"
   ];
 
   if (menores > 0) {
@@ -177,22 +191,22 @@ form.addEventListener("submit", (e) => {
 
   resultado.hidden = false;
 
-  // Armar mensaje de WhatsApp/Email limpiando las líneas vacías
+  // Resumen WhatsApp
   const resumen = [
     `Hola Rompe El Hielo, quiero cotizar un evento:`,
     `• Tipo de evento: ${inputTipoEvento.value}`,
-    `• Fecha: ${inputFecha.value}`,
+    `• Fecha: ${inputFecha.value} — Turno: ${inputTurno.value}`,
     `• Adultos: ${adultos}`,
-    menores > 0 ? `• Menores (Barra Teen): ${menores}` : '', // Solo aparece si es mayor a 0
+    menores > 0 ? `• Menores (Barra Teen): ${menores}` : '',
     `• Ubicación: ${zonaSeleccionada} ${kilometros !== null ? `(${kilometros} km)` : ''}`,
     `• Costo Barra Adultos: ${formatoARS.format(subtotalAdultos)}`,
-    menores > 0 ? `• Costo Barra Teen: ${formatoARS.format(subtotalMenores)}` : '', // Solo aparece si es mayor a 0
+    menores > 0 ? `• Costo Barra Teen: ${formatoARS.format(subtotalMenores)}` : '',
     `• Costo Traslado: ${trasladoTexto}`,
     `• TOTAL: ${formatoARS.format(subtotal)}`,
     `• Seña (50 %): ${formatoARS.format(senia)}`,
     "",
     "Entiendo que la barra libre incluye todos los cócteles + gaseosas y agua."
-  ].filter(Boolean).join("\n"); // .filter(Boolean) borra las líneas que quedaron vacías
+  ].filter(Boolean).join("\n");
 
   document.getElementById("btn-whatsapp").href =
     `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(resumen)}`;
@@ -206,5 +220,4 @@ form.addEventListener("submit", (e) => {
 // 6. Inicializar
 (async function init() {
   await cargarFechas();
-  configurarCalendario();
 })();
