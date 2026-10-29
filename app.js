@@ -1,15 +1,15 @@
 const CONFIG = {
-  precioPorAdulto: 20000,      // <-- Ajustá tu precio por adulto
-  minimoAdultos: 20,
+  precioPorAdulto: 20000,      // <-- Precio por adulto
+  precioPorMenor: 9000,        // <-- Precio Barra Teen (10 mocktails)
+  minimoAdultos: 20,           // <-- Regla de negocio: mínimo 20 adultos
   seniaPorcentaje: 0.5,
   whatsapp: "5491176449944",   // Número de tu logo
   email: "adrianlazarte2013@gmail.com", 
   
-  // Lógica de traslado
-  // Hacemos la división exacta: $90.000 / 52 km = 1730.769...
+  // Lógica de traslado (90000 / 52 km)
   costoPorKm: (90000 / 52),    
   
-  distanciasZonas: {           // <-- Kilómetros desde San Miguel
+  distanciasZonas: {
     "San Miguel": 0,
     "Zona Norte": 25,          
     "Zona Oeste": 25,          
@@ -17,21 +17,14 @@ const CONFIG = {
     "Capital (CABA)": 52,      
     "La Plata": 90,            
     "Otra": null               
-  },
-
-  incluye: [
-    "Barra libre: todos los cócteles de la carta",
-    "Sin alcohol: Coca-Cola, Sprite, soda y agua mineral",
-    "Bartender profesional durante todo el servicio",
-    "Hielo, vasos, vajilla y montaje completo",
-    "5 horas de servicio (ampliable)",
-    "Traslado calculado según distancia"
-  ]
+  }
 };
 
 const form = document.getElementById("form-cotizador");
+const inputTipoEvento = document.getElementById("tipo-evento");
 const inputFecha = document.getElementById("fecha");
 const inputAdultos = document.getElementById("adultos");
+const inputMenores = document.getElementById("menores");
 const inputUbicacion = document.getElementById("ubicacion");
 const errorFecha = document.getElementById("error-fecha");
 const errorAdultos = document.getElementById("error-adultos");
@@ -82,6 +75,11 @@ form.addEventListener("submit", (e) => {
 
   let valido = true;
 
+  if (!inputTipoEvento.value) {
+    alert("Por favor, seleccioná el tipo de evento.");
+    valido = false;
+  }
+
   if (!inputFecha.value) {
     errorFecha.textContent = "Seleccioná una fecha disponible.";
     valido = false;
@@ -90,9 +88,12 @@ form.addEventListener("submit", (e) => {
     valido = false;
   }
 
-  const adultos = parseInt(inputAdultos.value, 10);
-  if (!adultos || adultos < CONFIG.minimoAdultos) {
-    errorAdultos.textContent = `El mínimo es de ${CONFIG.minimoAdultos} adultos.`;
+  const adultos = parseInt(inputAdultos.value, 10) || 0;
+  const menores = parseInt(inputMenores.value, 10) || 0;
+
+  // Validación: mínimo 20 adultos (o podés cambiar a adultos + menores >= 20)
+  if (adultos < CONFIG.minimoAdultos) {
+    errorAdultos.textContent = `El mínimo es de ${CONFIG.minimoAdultos} adultos para la barra principal.`;
     valido = false;
   }
 
@@ -104,7 +105,9 @@ form.addEventListener("submit", (e) => {
   if (!valido) return;
 
   // --- CÁLCULOS ---
-  const subtotalBarra = adultos * CONFIG.precioPorAdulto;
+  const subtotalAdultos = adultos * CONFIG.precioPorAdulto;
+  const subtotalMenores = menores * CONFIG.precioPorMenor;
+  
   const zonaSeleccionada = inputUbicacion.value;
   const kilometros = CONFIG.distanciasZonas[zonaSeleccionada];
   
@@ -116,28 +119,48 @@ form.addEventListener("submit", (e) => {
   } else if (kilometros === 0) {
     trasladoTexto = "¡Bonificado! (0 km)";
   } else {
-    // Multiplicamos los km por el costo unitario exacto (90000/52)
     totalTraslado = kilometros * CONFIG.costoPorKm;
-    // Redondeamos el total del traslado
     totalTraslado = Math.round(totalTraslado);
-    
     trasladoTexto = `${kilometros} km — ${formatoARS.format(totalTraslado)}`;
   }
 
-  const subtotal = subtotalBarra + totalTraslado;
+  const subtotal = subtotalAdultos + subtotalMenores + totalTraslado;
   const senia = subtotal * CONFIG.seniaPorcentaje;
   const saldo = subtotal - senia;
 
   // Pintar resultado
-  document.getElementById("costo-barra").textContent = formatoARS.format(subtotalBarra);
+  document.getElementById("costo-adultos").textContent = formatoARS.format(subtotalAdultos);
+  
+  const filaMenores = document.getElementById("fila-menores");
+  if (menores > 0) {
+    filaMenores.hidden = false;
+    document.getElementById("costo-menores").textContent = formatoARS.format(subtotalMenores);
+  } else {
+    filaMenores.hidden = true;
+  }
+
   document.getElementById("costo-traslado").textContent = trasladoTexto;
   document.getElementById("total").textContent = formatoARS.format(subtotal);
   document.getElementById("senia").textContent = formatoARS.format(senia);
   document.getElementById("saldo").textContent = formatoARS.format(saldo);
 
+  // Armar lista de "Qué incluye"
   const lista = document.getElementById("lista-incluye");
   lista.innerHTML = "";
-  CONFIG.incluye.forEach(item => {
+  
+  const incluyeBase = [
+    "Barra libre: todos los cócteles de la carta",
+    "Sin alcohol: Coca-Cola, Sprite, soda y agua mineral",
+    "Bartender profesional durante todo el servicio",
+    "Hielo, vasos, vajilla y montaje completo",
+    "5 horas de servicio (ampliable)"
+  ];
+
+  if (menores > 0) {
+    incluyeBase.push(`Barra Teen: 10 mocktails exclusivos para menores (${menores} pax)`);
+  }
+
+  incluyeBase.forEach(item => {
     const li = document.createElement("li");
     li.textContent = item;
     lista.appendChild(li);
@@ -145,25 +168,28 @@ form.addEventListener("submit", (e) => {
 
   resultado.hidden = false;
 
-  // Armar mensajes
+  // Armar mensaje de WhatsApp/Email
   const resumen = [
-    "Hola Rompe El Hielo, quiero cotizar un evento:",
+    `Hola Rompe El Hielo, quiero cotizar un evento:`,
+    `• Tipo de evento: ${inputTipoEvento.value}`,
     `• Fecha: ${inputFecha.value}`,
     `• Adultos: ${adultos}`,
+    `• Menores (Barra Teen): ${menores}`,
     `• Ubicación: ${zonaSeleccionada} ${kilometros !== null ? `(${kilometros} km)` : ''}`,
-    `• Costo Barra: ${formatoARS.format(subtotalBarra)}`,
+    `• Costo Barra Adultos: ${formatoARS.format(subtotalAdultos)}`,
+    menores > 0 ? `• Costo Barra Teen: ${formatoARS.format(subtotalMenores)}` : '',
     `• Costo Traslado: ${trasladoTexto}`,
     `• TOTAL: ${formatoARS.format(subtotal)}`,
     `• Seña (50 %): ${formatoARS.format(senia)}`,
     "",
     "Entiendo que la barra libre incluye todos los cócteles + gaseosas y agua."
-  ].join("\n");
+  ].filter(Boolean).join("\n"); // .filter(Boolean) limpia las líneas vacías
 
   document.getElementById("btn-whatsapp").href =
     `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(resumen)}`;
 
   document.getElementById("btn-email").href =
-    `mailto:${CONFIG.email}?subject=${encodeURIComponent("Cotización Rompe El Hielo")}&body=${encodeURIComponent(resumen)}`;
+    `mailto:${CONFIG.email}?subject=${encodeURIComponent("Cotización Rompe El Hielo - " + inputTipoEvento.value)}&body=${encodeURIComponent(resumen)}`;
 
   resultado.scrollIntoView({ behavior: "smooth", block: "start" });
 });
