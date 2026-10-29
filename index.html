@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rompe El Hielo — Barra Libre para Eventos</title>
-  <meta name="description" content="Barra móvil con barra libre real: todos los cócteles de la carta + Coca-Cola, Sprite, soda y agua mineral. Cotizá en un minuto.">
+  <meta name="description" content="Barra móvil con barra libre real para adultos y Barra Teen (10 mocktails). Cotizá en un minuto.">
   <link rel="canonical" href="https://lazartead.github.io/Barra-libre/">
   
   <meta property="og:title" content="Rompe El Hielo — Barra Libre">
-  <meta property="og:description" content="Todos los cócteles de la carta + sin alcohol, incluidos. Cotizá online.">
+  <meta property="og:description" content="Barra libre para adultos + Barra Teen con 10 mocktails. Cotizá online.">
   <meta property="og:image" content="https://lazartead.github.io/Barra-libre/assets/logo.png">
   <meta property="og:url" content="https://lazartead.github.io/Barra-libre/">
   <meta property="og:type" content="website">
@@ -21,7 +21,7 @@
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     "name": "Rompe El Hielo",
-    "description": "Barra móvil con barra libre para eventos.",
+    "description": "Barra móvil con barra libre para adultos y Barra Teen con 10 mocktails.",
     "url": "https://lazartead.github.io/Barra-libre/",
     "areaServed": "San Miguel, Buenos Aires",
     "priceRange": "$$"
@@ -33,7 +33,7 @@
   <main class="container">
     <header class="hero">
       <h1>Rompe El Hielo</h1>
-      <p class="tagline">Barra libre real: todos los cócteles de la carta + Coca-Cola, Sprite, soda y agua mineral. Sin límites, sin sorpresas.</p>
+      <p class="tagline">Barra libre real para adultos + <strong>Barra Teen (10 mocktails)</strong>. Sin límites, sin sorpresas.</p>
     </header>
 
     <!-- COTIZADOR -->
@@ -42,15 +42,33 @@
 
       <form id="form-cotizador" novalidate>
         <div class="campo">
+          <label for="tipo-evento">Tipo de evento</label>
+          <select id="tipo-evento" name="tipo-evento" required>
+            <option value="">Seleccioná el tipo de evento...</option>
+            <option value="Cumpleaños de 15">Cumpleaños de 15</option>
+            <option value="Boda">Boda</option>
+            <option value="Cumpleaños adulto">Cumpleaños adulto</option>
+            <option value="Evento Corporativo">Evento Corporativo</option>
+            <option value="Fiesta Privada">Fiesta Privada</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+
+        <div class="campo">
           <label for="fecha">Fecha del evento</label>
           <input type="date" id="fecha" name="fecha" required aria-describedby="error-fecha">
           <p id="error-fecha" class="error" role="alert"></p>
         </div>
 
         <div class="campo">
-          <label for="adultos">Cantidad de adultos (mínimo 20)</label>
-          <input type="number" id="adultos" name="adultos" min="20" step="1" required aria-describedby="error-adultos">
+          <label for="adultos">Cantidad de adultos</label>
+          <input type="number" id="adultos" name="adultos" min="0" step="1" required aria-describedby="error-adultos">
           <p id="error-adultos" class="error" role="alert"></p>
+        </div>
+
+        <div class="campo">
+          <label for="menores">Cantidad de menores (Barra Teen - 10 mocktails)</label>
+          <input type="number" id="menores" name="menores" min="0" step="1" value="0">
         </div>
 
         <div class="campo">
@@ -73,7 +91,8 @@
       <div id="resultado" aria-live="polite" hidden>
         <h3>Tu cotización</h3>
         <div class="desglose">
-          <p><strong>Barra libre:</strong> <span id="costo-barra"></span></p>
+          <p><strong>Barra Adultos:</strong> <span id="costo-adultos"></span></p>
+          <p id="fila-menores" hidden><strong>Barra Teen:</strong> <span id="costo-menores"></span></p>
           <p><strong>Traslado:</strong> <span id="costo-traslado"></span></p>
           <hr>
           <p class="total"><strong>Total:</strong> <span id="total"></span></p>
@@ -113,7 +132,7 @@
     <!-- SECCIÓN: PRUEBA SOCIAL / INSTAGRAM -->
     <section id="experiencia" aria-labelledby="titulo-experiencia">
       <h2 id="titulo-experiencia">Momentos Rompe El Hielo</h2>
-      <p class="subtitulo-galeria">Tragos reales servidos en nuestros eventos. ¡Los invitados los suben a sus redes!</p>
+      <p class="subtitulo-galeria">Tragos reales servidos en nuestros eventos.</p>
       
       <div class="grid-instagram">
         <img src="assets/foto4.jpg" alt="Trago servido en un evento" loading="lazy">
