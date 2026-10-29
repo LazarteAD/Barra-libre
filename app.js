@@ -1,199 +1,228 @@
-// --- 1. CONFIGURACIÓN ---
-const SUPABASE_URL = "https://kzhalkrxltkopzwybjyn.supabase.co"; // <-- PEGAR LA URL AQUÍ
-const SUPABASE_KEY = "sb_publishable_bYmLIMkZX-GdbnlSjAC3Ww_dvcCIUvM"; // <-- PEGAR LA ANON KEY AQUÍ
-
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
 const CONFIG = {
-  precioPorAdulto: 20000, precioPorMenor: 9000, minimoAdultos: 20, seniaPorcentaje: 0.5,
-  whatsapp: "5491176449944", email: "adrianlazarte2013@gmail.com", costoPorKm: (90000 / 52),
-  distanciasZonas: { "San Miguel": 0, "Zona Norte": 25, "Zona Oeste": 25, "Zona Sur": 45, "Capital (CABA)": 52, "La Plata": 90 }
+  precioPorAdulto: 20000,      
+  precioPorMenor: 9000,        
+  minimoAdultos: 20,           
+  seniaPorcentaje: 0.5,
+  whatsapp: "5491176449944",   
+  email: "adrianlazarte2013@gmail.com", 
+  costoPorKm: (90000 / 52),    
+  
+  distanciasZonas: {
+    "San Miguel": 0,
+    "Zona Norte": 25,          
+    "Zona Oeste": 25,          
+    "Zona Sur": 45,            
+    "Capital (CABA)": 52,      
+    "La Plata": 90,            
+    "Otra": null               
+  }
 };
 
-// Elementos del DOM
 const form = document.getElementById("form-cotizador");
+const inputTipoEvento = document.getElementById("tipo-evento");
 const inputFecha = document.getElementById("fecha");
 const inputTurno = document.getElementById("turno");
 const inputAdultos = document.getElementById("adultos");
 const inputMenores = document.getElementById("menores");
 const inputUbicacion = document.getElementById("ubicacion");
-const inputTipoEvento = document.getElementById("tipo-evento");
 const errorFecha = document.getElementById("error-fecha");
 const errorAdultos = document.getElementById("error-adultos");
 const resultado = document.getElementById("resultado");
-const modalLead = document.getElementById("modal-lead");
-const formLead = document.getElementById("form-lead");
+
+// Elementos del Modal
+const modalDatos = document.getElementById("modal-datos");
+const btnWhatsapp = document.getElementById("btn-whatsapp");
+const btnConfirmarLead = document.getElementById("btn-confirmar-lead");
+const btnCancelarLead = document.getElementById("btn-cancelar-lead");
 
 let fechasOcupadas = [];
-let datosCotizacionActual = {}; // Guardamos los datos acá antes de enviarlos
+let mensajeWaGlobal = ""; 
 
-// --- 2. CARGAR FECHAS DESDE SUPABASE ---
 async function cargarFechas() {
   try {
-    // Lee la tabla "bloqueos"
-    const { data, error } = await supabaseClient.from('bloqueos').select('*');
-    if (error) throw error;
-    fechasOcupadas = data;
+    const res = await fetch("fechas-ocupadas.json", { cache: "no-store" });
+    if (!res.ok) throw new Error("No se pudo cargar el calendario");
+    const data = await res.json();
+    fechasOcupadas = data; 
   } catch (err) {
-    console.error("Error al cargar bloqueos:", err);
+    console.error("Error al cargar fechas:", err);
     fechasOcupadas = [];
   }
 }
 
-// --- 3. VALIDACIONES Y DISPONIBILIDAD ---
 function validarDisponibilidad() {
   const fechaVal = inputFecha.value;
   const turnoVal = inputTurno.value;
-  if (!fechaVal || !turnoVal) { errorFecha.textContent = ""; return; }
+
+  if (!fechaVal || !turnoVal) {
+    errorFecha.textContent = "";
+    return;
+  }
 
   const estaOcupado = fechasOcupadas.some(item => {
-    if (item.fecha !== fechaVal) return false;
-    if (!item.turno || item.turno === "Todo el día" || item.turno === turnoVal) return true;
-    return false;
+    return item.fecha === fechaVal && 
+           (item.turno === turnoVal || item.turno === "Todo el día");
   });
 
   if (estaOcupado) {
-    errorFecha.textContent = `Esa fecha y turno ya están reservados. Elegí otra opción.`;
+    errorFecha.textContent = `Ese turno (${turnoVal}) ya está reservado. Elegí otro turno u otra fecha.`;
     inputTurno.value = ""; 
   } else {
     errorFecha.textContent = "";
   }
 }
 
-inputFecha.addEventListener("change", validarDisponibilidad);
+inputFecha.addEventListener("change", () => {
+  const hoy = new Date().toISOString().split("T")[0];
+  inputFecha.min = hoy;
+  validarDisponibilidad();
+});
+
 inputTurno.addEventListener("change", validarDisponibilidad);
+
 form.querySelectorAll("input, select").forEach(campo => {
   campo.addEventListener("change", () => { resultado.hidden = true; });
 });
 
-const formatoARS = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
+const formatoARS = new Intl.NumberFormat("es-AR", {
+  style: "currency",
+  currency: "ARS",
+  maximumFractionDigits: 0
+});
 
-// --- 4. CALCULAR ---
 form.addEventListener("submit", (e) => {
   e.preventDefault();
-  errorFecha.textContent = ""; errorAdultos.textContent = "";
+  errorFecha.textContent = "";
+  errorAdultos.textContent = "";
   let valido = true;
 
   if (!inputTipoEvento.value) { alert("Seleccioná el tipo de evento."); valido = false; }
   if (!inputFecha.value) { errorFecha.textContent = "Seleccioná una fecha."; valido = false; }
   if (!inputTurno.value) { errorFecha.textContent = "Seleccioná un turno."; valido = false; }
+
   validarDisponibilidad();
   if (errorFecha.textContent !== "") valido = false;
 
   const adultos = Number(inputAdultos.value) || 0;
   const menores = Number(inputMenores.value) || 0;
-  if (adultos < CONFIG.minimoAdultos) { errorAdultos.textContent = `El mínimo es de ${CONFIG.minimoAdultos} adultos.`; valido = false; }
-  if (!inputUbicacion.value) { alert("Seleccioná tu ubicación."); valido = false; }
 
+  if (adultos < CONFIG.minimoAdultos) {
+    errorAdultos.textContent = `El mínimo es de ${CONFIG.minimoAdultos} adultos.`;
+    valido = false;
+  }
+
+  if (!inputUbicacion.value) { alert("Seleccioná tu ubicación."); valido = false; }
   if (!valido) return;
 
-  // Cálculos
+  // --- CÁLCULOS ---
   const subtotalAdultos = adultos * CONFIG.precioPorAdulto;
   const subtotalMenores = menores * CONFIG.precioPorMenor;
   const zonaSeleccionada = inputUbicacion.value;
   const kilometros = CONFIG.distanciasZonas[zonaSeleccionada];
-  let trasladoTexto = "", totalTraslado = 0;
+  
+  let trasladoTexto = "";
+  let totalTraslado = 0;
 
-  if (kilometros === null) { trasladoTexto = "A cotizar"; } 
-  else if (kilometros === 0) { trasladoTexto = "¡Bonificado! (0 km)"; } 
-  else { totalTraslado = Math.round(kilometros * CONFIG.costoPorKm); trasladoTexto = `${kilometros} km — ${formatoARS.format(totalTraslado)}`; }
+  if (kilometros === null) {
+    trasladoTexto = "A cotizar (fuera de zona)";
+  } else if (kilometros === 0) {
+    trasladoTexto = "¡Bonificado! (0 km)";
+  } else {
+    totalTraslado = Math.round(kilometros * CONFIG.costoPorKm);
+    trasladoTexto = `${kilometros} km — ${formatoARS.format(totalTraslado)}`;
+  }
 
   const subtotal = subtotalAdultos + subtotalMenores + totalTraslado;
   const senia = subtotal * CONFIG.seniaPorcentaje;
   const saldo = subtotal - senia;
 
-  // Guardamos los datos para usarlos en el modal
-  datosCotizacionActual = {
-    tipo_evento: inputTipoEvento.value, fecha: inputFecha.value, turno: inputTurno.value,
-    adultos: adultos, menores: menores, zona: zonaSeleccionada, total: subtotal, senia: senia, saldo: saldo,
-    trasladoTexto: trasladoTexto, subtotalAdultos: subtotalAdultos, subtotalMenores: subtotalMenores, kilometros: kilometros
-  };
-
-  // Pintar en pantalla
   document.getElementById("costo-adultos").textContent = formatoARS.format(subtotalAdultos);
-  document.getElementById("fila-menores").hidden = menores === 0;
-  if (menores > 0) document.getElementById("costo-menores").textContent = formatoARS.format(subtotalMenores);
+  
+  const filaMenores = document.getElementById("fila-menores");
+  if (menores > 0) {
+    filaMenores.hidden = false;
+    document.getElementById("costo-menores").textContent = formatoARS.format(subtotalMenores);
+  } else {
+    filaMenores.hidden = true; 
+  }
+
   document.getElementById("costo-traslado").textContent = trasladoTexto;
   document.getElementById("total").textContent = formatoARS.format(subtotal);
   document.getElementById("senia").textContent = formatoARS.format(senia);
   document.getElementById("saldo").textContent = formatoARS.format(saldo);
 
+  const lista = document.getElementById("lista-incluye");
+  lista.innerHTML = "";
+  const incluyeBase = [
+    "Barra libre: todos los cócteles de la carta",
+    "Sin alcohol: Coca-Cola, Sprite, soda y agua mineral",
+    "Bartender profesional durante todo el servicio",
+    "Hielo, vasos, vajilla y montaje completo",
+    "5 horas de servicio"
+  ];
+
+  if (menores > 0) incluyeBase.push(`Barra Teen: 10 mocktails exclusivos para menores (${menores} pax)`);
+
+  incluyeBase.forEach(item => {
+    const li = document.createElement("li");
+    li.textContent = item;
+    lista.appendChild(li);
+  });
+
   resultado.hidden = false;
+
+  // Guardamos el mensaje en una variable global para usarlo en el modal
+  mensajeWaGlobal = [
+    `Hola Rompe El Hielo, quiero cotizar un evento:`,
+    `• Tipo de evento: ${inputTipoEvento.value}`,
+    `• Fecha: ${inputFecha.value} — Turno: ${inputTurno.value}`,
+    `• Adultos: ${adultos}`,
+    menores > 0 ? `• Menores (Barra Teen): ${menores}` : '',
+    `• Ubicación: ${zonaSeleccionada} ${kilometros !== null ? `(${kilometros} km)` : ''}`,
+    `• Costo Barra Adultos: ${formatoARS.format(subtotalAdultos)}`,
+    menores > 0 ? `• Costo Barra Teen: ${formatoARS.format(subtotalMenores)}` : '',
+    `• Costo Traslado: ${trasladoTexto}`,
+    `• TOTAL: ${formatoARS.format(subtotal)}`,
+    `• Seña (50 %): ${formatoARS.format(senia)}`,
+    "",
+    "Entiendo que la barra libre incluye todos los cócteles + gaseosas y agua."
+  ].filter(Boolean).join("\n");
+
+  // Email directo
+  document.getElementById("btn-email").href =
+    `mailto:${CONFIG.email}?subject=${encodeURIComponent("Cotización Rompe El Hielo - " + inputTipoEvento.value)}&body=${encodeURIComponent(mensajeWaGlobal)}`;
+
   resultado.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
-// --- 5. MODAL Y ENVÍO A SUPABASE ---
-document.getElementById("btn-reservar").addEventListener("click", () => {
-  modalLead.hidden = false;
+// --- LÓGICA DEL MODAL ---
+btnWhatsapp.addEventListener("click", () => {
+  modalDatos.hidden = false; // Abre el modal
 });
 
-document.getElementById("btn-cerrar-modal").addEventListener("click", () => {
-  modalLead.hidden = true;
+btnCancelarLead.addEventListener("click", () => {
+  modalDatos.hidden = true; // Cierra el modal
 });
 
-formLead.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const nombre = document.getElementById("lead-nombre").value;
-  const telefono = document.getElementById("lead-telefono").value;
-  const btnSubmit = formLead.querySelector('button[type="submit"]');
-  
-  btnSubmit.textContent = "Guardando...";
-  btnSubmit.disabled = true;
+btnConfirmarLead.addEventListener("click", () => {
+  const nombre = document.getElementById("lead-nombre").value.trim();
+  const telefono = document.getElementById("lead-telefono").value.trim();
 
-  // 1. Guardar en la Base de Datos (Supabase)
-  const { error } = await supabaseClient.from('reservas').insert([{
-    nombre: nombre,
-    telefono: telefono,
-    tipo_evento: datosCotizacionActual.tipo_evento,
-    fecha: datosCotizacionActual.fecha,
-    turno: datosCotizacionActual.turno,
-    adultos: datosCotizacionActual.adultos,
-    menores: datosCotizacionActual.menores,
-    zona: datosCotizacionActual.zona,
-    total: datosCotizacionActual.total
-  }]);
-
-  if (error) {
-    alert("Hubo un error al guardar. Por favor intentá de nuevo.");
-    console.error(error);
-    btnSubmit.textContent = "Confirmar y Enviar";
-    btnSubmit.disabled = false;
+  if (!nombre || !telefono) {
+    alert("Por favor, completá tu nombre y teléfono para enviar la cotización.");
     return;
   }
 
-  // 2. Armar mensaje de WhatsApp
-  const resumen = [
-    `Hola Rompe El Hielo, acabo de cotizar en la web:`,
-    `• Nombre: ${nombre}`,
-    `• Tipo de evento: ${datosCotizacionActual.tipo_evento}`,
-    `• Fecha: ${datosCotizacionActual.fecha} — Turno: ${datosCotizacionActual.turno}`,
-    `• Adultos: ${datosCotizacionActual.adultos}`,
-    datosCotizacionActual.menores > 0 ? `• Menores: ${datosCotizacionActual.menores}` : '',
-    `• Ubicación: ${datosCotizacionActual.zona}`,
-    `• TOTAL: ${formatoARS.format(datosCotizacionActual.total)}`,
-    `• Seña (50 %): ${formatoARS.format(datosCotizacionActual.senia)}`,
-    "",
-    "¿Me pasan los datos para transferir la seña y bloquear la fecha?"
-  ].filter(Boolean).join("\n");
-
-  const whatsappURL = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(resumen)}`;
-
-  // 3. Redirigir a WhatsApp
-  window.open(whatsappURL, '_blank');
+  // Agregamos los datos al mensaje final
+  const mensajeFinal = mensajeWaGlobal + `\n\nMis datos de contacto:\n• Nombre: ${nombre}\n• Teléfono: ${telefono}`;
   
-  // 4. Resetear todo
-  modalLead.hidden = true;
-  form.reset();
-  resultado.hidden = true;
-  btnSubmit.textContent = "Confirmar y Enviar";
-  btnSubmit.disabled = false;
+  // Abrimos WhatsApp
+  window.open(`https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(mensajeFinal)}`, '_blank');
+  
+  // Cerramos el modal
+  modalDatos.hidden = true;
 });
 
-// Botón limpiar
-document.getElementById("btn-limpiar").addEventListener("click", () => {
-  form.reset(); resultado.hidden = true; errorFecha.textContent = ""; errorAdultos.textContent = "";
-  inputMenores.value = 0; window.scrollTo({ top: 0, behavior: "smooth" });
-});
-
-// Inicializar
-(async function init() { await cargarFechas(); })();
+(async function init() {
+  await cargarFechas();
+})();
